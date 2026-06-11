@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SongSync – AI Song Recognition</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#e0e0e0;font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+:root{--red:#E50914;--green:#1DB954;--border:rgba(255,255,255,0.08);--bg2:rgba(255,255,255,0.04)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+a{text-decoration:none;color:inherit}
+/* blobs */
+.blob{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(70px);animation:bp 8s ease-in-out infinite}
+.b1{top:-20%;left:25%;width:55vw;height:55vw;background:radial-gradient(circle,rgba(229,9,20,.12),transparent 70%)}
+.b2{bottom:-15%;right:-10%;width:40vw;height:40vw;background:radial-gradient(circle,rgba(29,185,84,.09),transparent 70%);animation-delay:3s}
+@keyframes bp{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+/* nav */
+nav{position:fixed;top:0;inset-inline:0;z-index:100;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(10,10,10,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.logo-ic{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--red),#ff5555);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:17px;color:#fff}
+.logo-tx{font-family:'Bebas Neue';font-size:24px;letter-spacing:.1em;color:#fff}
+.nav-mid{display:flex;gap:28px}
+.nav-mid a{font-size:13px;font-weight:700;color:#777;position:relative;padding:3px 0;transition:color .15s;cursor:pointer}
+.nav-mid a:hover,.nav-mid a.on{color:#fff}
+.nav-mid a.on::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;border-radius:2px;background:var(--green)}
+.nav-r{display:flex;align-items:center;gap:10px}
+.srch{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--border)}
+.srch input{background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:140px}
+.srch input::placeholder{color:#555}
+.ava{width:32px;height:32px;border-radius:50%;background:#222;border:1px solid #333;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hmb{display:none;background:none;border:none;color:#fff;cursor:pointer}
+/* mobile */
+.mob-nav{display:none;position:fixed;top:62px;inset-inline:0;z-index:99;background:rgba(8,8,8,.97);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);padding:18px 24px;flex-direction:column;gap:16px}
+.mob-nav.show{display:flex}
+.mob-nav a{font-size:15px;font-weight:700;color:#777;cursor:pointer;transition:color .15s}
+.mob-nav a:hover{color:#fff}
+/* main */
+main{position:relative;z-index:1;padding:88px 36px 80px;max-width:1260px;margin:0 auto}
+.sec{margin-bottom:56px}
+/* hero */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;background:rgba(229,9,20,.12);border:1px solid rgba(229,9,20,.25);font-size:11px;font-weight:700;color:var(--red);margin-bottom:18px}
+.badge span{color:var(--green)}
+h1{font-family:'Bebas Neue';font-size:68px;line-height:.93;color:#fff}
+h1 em{color:var(--red);font-style:normal}
+.sub{margin-top:16px;font-size:14px;line-height:1.75;color:#888;max-width:370px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.bp{padding:12px 26px;border-radius:99px;background:var(--green);color:#000;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s}
+.bp:hover{opacity:.85}
+.bo{padding:12px 26px;border-radius:99px;background:transparent;color:#ccc;font-size:13px;font-weight:700;border:1px solid #333;cursor:pointer;transition:background .15s}
+.bo:hover{background:rgba(255,255,255,.06)}
+.sts{display:flex;gap:32px;margin-top:32px}
+.sv{font-family:'Bebas Neue';font-size:30px;color:#fff}
+.sl{font-size:11px;color:#666;margin-top:1px}
+/* upload */
+.uz{border:2px dashed #2e2e2e;border-radius:20px;padding:44px 32px;text-align:center;background:rgba(255,255,255,.02);cursor:pointer;transition:background .2s,border-color .2s}
+.uz:hover{background:rgba(255,255,255,.04);border-color:#444}
+.uz.dov{background:rgba(29,185,84,.06);border-color:var(--green)}
+.ue{font-size:44px;margin-bottom:14px;animation:fb 2.5s ease-in-out infinite}
+@keyframes fb{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ut{font-size:16px;font-weight:700;color:#fff;margin-bottom:5px}
+.us{font-size:12px;color:#777}
+.div{display:flex;align-items:center;gap:10px;margin:18px 0}
+.div::before,.div::after{content:'';flex:1;height:1px;background:#222}
+.div span{font-size:11px;color:#555}
+.ur{display:flex;gap:7px}
+.ui{flex:1;padding:9px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#fff;font-size:12px;outline:none}
+.ui::placeholder{color:#555}
+.ud{padding:9px 18px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer}
+/* loading */
+.ld{border-radius:20px;padding:56px 32px;text-align:center;background:var(--bg2);border:1px solid var(--border);display:none;flex-direction:column;align-items:center;gap:18px}
+.ld.show{display:flex}
+.spw{position:relative;width:68px;height:68px}
+.sp{position:absolute;inset:0;border-radius:50%;border:2px solid var(--green);border-top-color:transparent;animation:spin .85s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spi{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.lt{font-size:17px;font-weight:700;color:#fff}
+.ls{font-size:12px;color:#777}
+.bars{display:flex;align-items:flex-end;gap:3px;height:22px}
+.bar{width:4px;background:var(--green);border-radius:2px;animation:bp2 .55s ease-in-out infinite alternate}
+@keyframes bp2{from{height:4px}to{height:18px}}
+/* result */
+.rs{border-radius:20px;padding:22px;background:var(--bg2);border:1px solid rgba(255,255,255,.1);display:none;flex-direction:column;gap:16px}
+.rs.show{display:flex}
+.mb{display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:99px;background:var(--green);color:#000;font-size:11px;font-weight:900}
+.mp{font-size:12px;font-weight:700;color:var(--green)}
+.rt{display:flex;gap:16px}
+.ra{width:100px;height:100px;border-radius:14px;object-fit:cover;flex-shrink:0}
+.ri h3{font-size:20px;font-weight:900;color:#fff;line-height:1.1}
+.ri p{font-size:13px;color:#aaa;margin-top:3px}
+.ri small{font-size:12px;color:#666}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.tag{padding:2px 10px;border-radius:99px;font-size:10px;font-weight:700;background:rgba(255,255,255,.07);color:#aaa}
+.ract{display:flex;flex-wrap:wrap;gap:9px}
+.bsp{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:99px;background:var(--green);color:#000;font-size:12px;font-weight:700;border:none;cursor:pointer}
+.bsp:hover{opacity:.85}
+.bsp svg{fill:currentColor}
+.bac{display:inline-flex;align-items:center;gap:5px;padding:9px 16px;border-radius:99px;background:transparent;color:#ccc;font-size:12px;font-weight:700;border:1px solid #2e2e2e;cursor:pointer}
+.bac:hover{background:rgba(255,255,255,.05)}
+/* section header */
+.sh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.st{font-family:'Bebas Neue';font-size:28px;color:#fff}
+.ss{font-size:12px;color:#666;margin-top:2px}
+.va{font-size:12px;font-weight:700;color:var(--green)}
+/* grid */
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+.mc{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s;animation:fu .4s ease both}
+.mc:hover{transform:translateY(-5px) scale(1.02);border-color:rgba(255,255,255,.16)}
+@keyframes fu{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.ciw{position:relative;aspect-ratio:1}
+.ci{width:100%;height:100%;object-fit:cover;display:block}
+.co{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65),transparent 50%)}
+.cp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.mc:hover .cp{opacity:1}
+.pb{width:48px;height:48px;border-radius:50%;background:var(--green);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.pb:hover{transform:scale(1.1)}
+.pb svg{fill:#000}
+.cm{position:absolute;top:7px;right:7px;padding:2px 9px;border-radius:99px;background:rgba(0,0,0,.7);color:var(--green);font-size:9px;font-weight:700}
+.cw{position:absolute;bottom:7px;left:7px;display:none;align-items:flex-end;gap:2px;height:12px}
+.cw.on{display:flex}
+.wb{width:3px;background:var(--green);border-radius:2px;animation:bp2 .5s ease-in-out infinite alternate}
+.cb{padding:10px 12px}
+.cn{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ca{font-size:11px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cm2{display:flex;justify-content:space-between;margin-top:7px}
+.cm2 span{font-size:9px;color:#555}
+/* now playing */
+.np{position:fixed;bottom:-90px;inset-inline:16px;z-index:200;max-width:860px;margin:0 auto;border-radius:16px;padding:11px 18px;display:flex;align-items:center;gap:14px;background:rgba(16,16,16,.97);border:1px solid #282828;backdrop-filter:blur(20px);transition:bottom .4s cubic-bezier(.175,.885,.32,1.275)}
+.np.vis{bottom:18px}
+.npa{width:44px;height:44px;border-radius:9px;object-fit:cover;flex-shrink:0}
+.npi{flex:1;min-width:0}
+.npt{font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.npar{font-size:11px;color:#888}
+.npb{display:flex;align-items:flex-end;gap:2px;height:16px}
+.npbar{width:3px;background:var(--green);border-radius:2px;animation:bp2 .5s ease-in-out infinite alternate}
+.npc{background:none;border:none;color:#666;font-size:16px;cursor:pointer;transition:color .15s;padding:3px}
+.npc:hover{color:#fff}
+/* bottom grid */
+.bg2{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.pan{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:22px}
+.pt{font-family:'Bebas Neue';font-size:19px;color:#fff;margin-bottom:16px}
+.hi{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .15s}
+.hi:hover{background:rgba(255,255,255,.05)}
+.hia{width:42px;height:42px;border-radius:9px;object-fit:cover;flex-shrink:0}
+.hin{flex:1;min-width:0}
+.hit{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hiar{font-size:11px;color:#777}
+.htm{font-size:10px;color:#555;flex-shrink:0}
+.hop{padding:4px 11px;border-radius:99px;background:transparent;border:1px solid #282828;color:#aaa;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0}
+.hop:hover{background:rgba(255,255,255,.05)}
+.sr{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sic{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sn{font-size:18px;font-weight:900;color:#fff;line-height:1}
+.slb{font-size:11px;color:#777;margin-top:1px}
+/* features */
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.fc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;transition:transform .2s,border-color .2s;animation:fu .4s ease both}
+.fc:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.13)}
+.fi{font-size:26px;margin-bottom:10px}
+.ftt{font-size:14px;font-weight:800;color:#fff;margin-bottom:5px}
+.fd{font-size:12px;line-height:1.6;color:#777}
+/* cta */
+.cta{border-radius:20px;padding:60px 36px;text-align:center;background:linear-gradient(135deg,rgba(229,9,20,.17),rgba(29,185,84,.1));border:1px solid rgba(255,255,255,.09)}
+.cta h2{font-family:'Bebas Neue';font-size:48px;color:#fff;margin-bottom:9px}
+.cta p{font-size:14px;color:#aaa;max-width:400px;margin:0 auto 22px}
+/* footer */
+footer{position:relative;z-index:1;text-align:center;padding:32px;border-top:1px solid #161616}
+footer p{font-size:11px;color:#444}
+footer span{color:var(--red)}
+/* responsive */
+@media(max-width:860px){
+  nav{padding:0 18px}
+  main{padding:80px 18px 60px}
+  .hero{grid-template-columns:1fr;gap:36px}
+  h1{font-size:52px}
+  .bg2{grid-template-columns:1fr}
+  .nav-mid,.srch{display:none}
+  .hmb{display:block}
+}
+@media(max-width:500px){h1{font-size:42px}.cta h2{font-size:36px}.mg{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="scrollTo({top:0,behavior:'smooth'})">
+    <div class="logo-ic">S</div>
+    <span class="logo-tx">SongSync</span>
+  </div>
+  <div class="nav-mid">
+    <a class="on" onclick="scrollSec('discover')">Discover</a>
+    <a onclick="scrollSec('trending')">Trending</a>
+    <a onclick="scrollSec('history')">History</a>
+    <a onclick="scrollSec('features')">Features</a>
+  </div>
+  <div class="nav-r">
+    <div class="srch">
+      <svg width="12" height="12" fill="none" stroke="#666" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="si" placeholder="Search songs…" oninput="filterSongs(this.value)"/>
+    </div>
+    <div class="ava">A</div>
+    <button class="hmb" onclick="toggleMob()" aria-label="menu">
+      <svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+</nav>
+<div class="mob-nav" id="mn">
+  <a onclick="scrollSec('discover');toggleMob()">Discover</a>
+  <a onclick="scrollSec('trending');toggleMob()">Trending</a>
+  <a onclick="scrollSec('history');toggleMob()">History</a>
+  <a onclick="scrollSec('features');toggleMob()">Features</a>
+</div>
+
+<main>
+<!-- HERO -->
+<section class="hero sec" id="discover">
+  <div>
+    <div class="badge"><span>●</span> LIVE · 80M+ tracks indexed</div>
+    <h1>IDENTIFY<br/><em>ANY</em><br/>SONG</h1>
+    <p class="sub">Upload an audio clip or paste a reel URL — SongSync fingerprints it in seconds and hands you the Spotify link.</p>
+    <div class="btns">
+      <button class="bp" onclick="scrollSec('discover');document.getElementById('uz').scrollIntoView({behavior:'smooth'})">Detect a Song →</button>
+      <button class="bo" onclick="runDemo()">▶ Watch Demo</button>
+    </div>
+    <div class="sts">
+      <div><div class="sv">80M+</div><div class="sl">Songs</div></div>
+      <div><div class="sv">0.3s</div><div class="sl">Detection</div></div>
+      <div><div class="sv">99.1%</div><div class="sl">Accuracy</div></div>
+    </div>
+  </div>
+  <div>
+    <!-- idle -->
+    <div class="uz" id="uz"
+      ondragover="event.preventDefault();this.classList.add('dov')"
+      ondragleave="this.classList.remove('dov')"
+      ondrop="onDrop(event)"
+      onclick="document.getElementById('fi').click()">
+      <input type="file" id="fi" style="display:none" accept="audio/*,video/*" onchange="handleFile(this.files[0])"/>
+      <div class="ue">🎵</div>
+      <div class="ut">Drop audio or video file</div>
+      <div class="us">MP3 · MP4 · WAV · M4A · WEBM — up to 50MB</div>
+      <div class="div"><span>OR</span></div>
+      <div class="ur" onclick="event.stopPropagation()">
+        <input class="ui" id="urli" placeholder="Paste reel / YouTube URL…" onkeydown="if(event.key==='Enter')detectUrl()"/>
+        <button class="ud" onclick="detectUrl()">Detect</button>
+      </div>
+    </div>
+    <!-- loading -->
+    <div class="ld" id="ld">
+      <div class="spw"><div class="sp"></div><div class="spi">🎧</div></div>
+      <div><div class="lt">Analyzing audio fingerprint…</div><div class="ls">Matching against 80M+ tracks</div></div>
+      <div class="bars" id="lbars"></div>
+    </div>
+    <!-- result -->
+    <div class="rs" id="rs">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="mb">✓ SONG IDENTIFIED</div>
+        <span class="mp" id="rmp">98.7% match</span>
+      </div>
+      <div class="rt">
+        <img class="ra" id="rart" src="" alt=""/>
+        <div class="ri">
+          <h3 id="rttl">–</h3>
+          <p id="rart2">–</p>
+          <small id="ralb">–</small>
+          <div class="tags" id="rtags"></div>
+        </div>
+      </div>
+      <div class="ract">
+        <button class="bsp" onclick="openSpotify()">
+          <svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Open in Spotify
+        </button>
+        <button class="bac" onclick="resetUp()">↑ Try Another</button>
+        <button class="bac" id="savebtn" onclick="toggleSave()">♡ Save</button>
+        <button class="bac" onclick="playResult()">▶ Preview</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRENDING -->
+<section class="sec" id="trending">
+  <div class="sh">
+    <div><div class="st">TRENDING NOW</div><div class="ss">What the world is listening to</div></div>
+    <a class="va" href="#">View all →</a>
+  </div>
+  <div class="mg" id="mg"></div>
+</section>
+
+<!-- HISTORY + STATS -->
+<section class="sec bg2" id="history">
+  <div class="pan">
+    <div class="pt">RECENT DETECTIONS</div>
+    <div id="hl"></div>
+  </div>
+  <div class="pan">
+    <div class="pt">YOUR STATS</div>
+    <div id="sl2"></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" id="features">
+  <div class="sh">
+    <div><div class="st">EVERYTHING YOU NEED</div><div class="ss">One platform, endless discovery</div></div>
+  </div>
+  <div class="fg" id="fg"></div>
+</section>
+
+<!-- CTA -->
+<section class="cta sec">
+  <h2>NEVER LOSE A SONG AGAIN</h2>
+  <p>Start detecting for free — no credit card required.</p>
+  <button class="bp" style="font-size:14px;padding:14px 38px" onclick="runDemo()">Get Started Free →</button>
+</section>
+</main>
+
+<!-- NOW PLAYING -->
+<div class="np" id="np">
+  <img class="npa" id="npa" src="" alt=""/>
+  <div class="npi"><div class="npt" id="npt">–</div><div class="npar" id="npar">–</div></div>
+  <div class="npb" id="npb"></div>
+  <button class="bsp" style="font-size:11px;padding:7px 14px" onclick="openSpotify()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+    Spotify
+  </button>
+  <button class="npc" onclick="stopPlay()">✕</button>
+</div>
+
+<footer><p>© 2025 SongSync · Built with <span>♥</span> · Powered by ShazamIO + Spotify API</p></footer>
+
+<script>
+const SONGS=[
+  {id:1,title:"Espresso",artist:"Sabrina Carpenter",album:"Short n' Sweet · 2024",dur:"2:55",plays:"2.1B",cover:"https://i.scdn.co/image/ab67616d0000b273f6b55ca93b5f5a8aaaa4b49e",mood:"Pop",bpm:"119",key:"A Major",spotify:"https://open.spotify.com/track/2qSkIjg1o9h3YT9RAgYN75"},
+  {id:2,title:"Blinding Lights",artist:"The Weeknd",album:"After Hours · 2019",dur:"3:22",plays:"3.5B",cover:"https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36",mood:"Synth-pop",bpm:"171",key:"F Minor",spotify:"https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"},
+  {id:3,title:"As It Was",artist:"Harry Styles",album:"Harry's House · 2022",dur:"2:47",plays:"2.8B",cover:"https://i.scdn.co/image/ab67616d0000b2732e8ed79e177ff6011076f5f0",mood:"Indie",bpm:"124",key:"A Minor",spotify:"https://open.spotify.com/track/4Dvkj6JhhA12EX05fT7y2e"},
+  {id:4,title:"Flowers",artist:"Miley Cyrus",album:"Endless Summer · 2023",dur:"3:21",plays:"1.9B",cover:"https://i.scdn.co/image/ab67616d0000b273f429549123dfe8df41e7b0a5",mood:"Pop",bpm:"120",key:"E Major",spotify:"https://open.spotify.com/track/7CeulkCUeoPVBXM6Ck3ki4"},
+  {id:5,title:"Cruel Summer",artist:"Taylor Swift",album:"Lover · 2019",dur:"2:58",plays:"3.1B",cover:"https://i.scdn.co/image/ab67616d0000b273e787cffec20aa2a396a61647",mood:"Pop",bpm:"170",key:"A Major",spotify:"https://open.spotify.com/track/1BxfuPKGuaTgP7aM0Bbdpe"},
+  {id:6,title:"Stay With Me",artist:"Sam Smith",album:"In The Lonely Hour · 2014",dur:"2:52",plays:"1.6B",cover:"https://i.scdn.co/image/ab67616d0000b273dbdb2bf0a3d2efb9d0f70f4d",mood:"Soul",bpm:"86",key:"C Major",spotify:"https://open.spotify.com/track/5zvXCqKSPknAMJEJJKMnYl"},
+  {id:7,title:"Levitating",artist:"Dua Lipa",album:"Future Nostalgia · 2020",dur:"3:23",plays:"2.4B",cover:"https://i.scdn.co/image/ab67616d0000b273bd26ede1ae69327010d49946",mood:"Disco",bpm:"103",key:"B Major",spotify:"https://open.spotify.com/track/39LLxExYz6ewLAcYrzQQyP"},
+  {id:8,title:"golden hour",artist:"JVKE",album:"this is what __ · 2022",dur:"3:29",plays:"1.3B",cover:"https://i.scdn.co/image/ab67616d0000b2739b9b36b0e22870b9f541079e",mood:"Folk-pop",bpm:"97",key:"D Major",spotify:"https://open.spotify.com/track/5odlY52u43F5BjByhxg7wg"},
+];
+const HIST=[
+  {title:"Heat Waves",artist:"Glass Animals",time:"2 min ago",cover:"https://i.scdn.co/image/ab67616d0000b2739b9b36b0e22870b9f541079e"},
+  {title:"Peaches",artist:"Justin Bieber",time:"18 min ago",cover:"https://i.scdn.co/image/ab67616d0000b273f429549123dfe8df41e7b0a5"},
+  {title:"drivers license",artist:"Olivia Rodrigo",time:"1 hr ago",cover:"https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a"},
+  {title:"Shivers",artist:"Ed Sheeran",time:"3 hrs ago",cover:"https://i.scdn.co/image/ab67616d0000b2732e8ed79e177ff6011076f5f0"},
+];
+const STATS=[{i:"🎵",v:"24",l:"Songs Detected"},{i:"♥",v:"9",l:"Favorites Saved"},{i:"🎸",v:"7",l:"Genres Explored"},{i:"🔥",v:"5 days",l:"Current Streak"}];
+const FEAT=[
+  {i:"🎙️",t:"Audio & Video Upload",d:"MP3, MP4, WAV, M4A, WEBM up to 50MB. FFmpeg extracts audio automatically."},
+  {i:"🔗",t:"Reel & Short URLs",d:"Paste Instagram Reels, YouTube Shorts or TikTok links — detected in seconds."},
+  {i:"🎧",t:"Spotify Integration",d:"Every match links directly to Spotify. Save, queue, or share instantly."},
+  {i:"📈",t:"Trending Charts",d:"Real-time charts updated hourly. Discover what's blowing up globally."},
+  {i:"🔒",t:"Private History",d:"Your detections are private, synced via Firebase Auth + Firestore."},
+  {i:"⚡",t:"0.3s Detection",d:"Shazam-grade fingerprinting matches your clip against 80M+ tracks."},
+];
+const DEMO=[
+  {title:"Espresso",artist:"Sabrina Carpenter",album:"Short n' Sweet · 2024",cover:"https://i.scdn.co/image/ab67616d0000b273f6b55ca93b5f5a8aaaa4b49e",match:"98.7%",bpm:"119",key:"A Major",genre:"Pop",spotify:"https://open.spotify.com/track/2qSkIjg1o9h3YT9RAgYN75"},
+  {title:"Blinding Lights",artist:"The Weeknd",album:"After Hours · 2019",cover:"https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36",match:"97.3%",bpm:"171",key:"F Minor",genre:"Synth-pop",spotify:"https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"},
+  {title:"As It Was",artist:"Harry Styles",album:"Harry's House · 2022",cover:"https://i.scdn.co/image/ab67616d0000b2732e8ed79e177ff6011076f5f0",match:"99.1%",bpm:"124",key:"A Minor",genre:"Indie",spotify:"https://open.spotify.com/track/4Dvkj6JhhA12EX05fT7y2e"},
+];
+
+let curPlay=null,curResult=null;
+
+// init
+window.onload=()=>{
+  renderGrid(SONGS);
+  renderHist();
+  renderStats();
+  renderFeat();
+  buildBars('lbars',10);
+  buildBars('npb',7);
+};
+
+function buildBars(id,n){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML='';
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div');
+    b.className=id==='npb'?'npbar':'bar';
+    b.style.animationDelay=i*0.07+'s';
+    el.appendChild(b);
+  }
+}
+
+function renderGrid(songs){
+  const g=document.getElementById('mg');g.innerHTML='';
+  songs.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='mc';d.style.animationDelay=i*0.055+'s';
+    d.innerHTML=`<div class="ciw">
+      <img class="ci" src="${s.cover}" alt="${s.title}" loading="lazy"/>
+      <div class="co"></div>
+      <div class="cp"><button class="pb" onclick="playCard(${s.id},event)">
+        <svg id="pi${s.id}" width="20" height="20" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button></div>
+      <span class="cm">${s.mood}</span>
+      <div class="cw" id="cw${s.id}">${[1,2,3,4,3].map((h,wi)=>`<div class="wb" style="height:${h*2}px;animation-delay:${wi*0.1}s"></div>`).join('')}</div>
+    </div>
+    <div class="cb">
+      <div class="cn">${s.title}</div>
+      <div class="ca">${s.artist}</div>
+      <div class="cm2"><span>${s.plays}</span><span>${s.dur}</span></div>
+    </div>`;
+    g.appendChild(d);
+  });
+}
+
+function playCard(id,e){
+  e.stopPropagation();
+  const s=SONGS.find(x=>x.id===id);if(!s)return;
+  if(curPlay===id){stopPlay();return;}
+  if(curPlay)stopIcon(curPlay);
+  curPlay=id;
+  document.getElementById('cw'+id).classList.add('on');
+  const pi=document.getElementById('pi'+id);
+  if(pi)pi.innerHTML='<path d="M6 4h4v16H6zm8 0h4v16h-4z"/>';
+  document.getElementById('npa').src=s.cover;
+  document.getElementById('npt').textContent=s.title;
+  document.getElementById('npar').textContent=s.artist;
+  curResult=s;
+  document.getElementById('np').classList.add('vis');
+}
+function stopIcon(id){
+  const pi=document.getElementById('pi'+id);
+  if(pi)pi.innerHTML='<path d="M8 5v14l11-7z"/>';
+  document.getElementById('cw'+id)&&document.getElementById('cw'+id).classList.remove('on');
+}
+function stopPlay(){
+  if(curPlay)stopIcon(curPlay);
+  curPlay=null;
+  document.getElementById('np').classList.remove('vis');
+}
+
+function filterSongs(q){
+  renderGrid(SONGS.filter(s=>s.title.toLowerCase().includes(q.toLowerCase())||s.artist.toLowerCase().includes(q.toLowerCase())));
+}
+
+// upload/detect
+function onDrop(e){e.preventDefault();document.getElementById('uz').classList.remove('dov');if(e.dataTransfer.files[0])startDetect();}
+function handleFile(f){if(f)startDetect();}
+function detectUrl(){if(document.getElementById('urli').value.trim())startDetect();}
+function runDemo(){startDetect();}
+
+function startDetect(){
+  document.getElementById('uz').style.display='none';
+  document.getElementById('ld').classList.add('show');
+  document.getElementById('rs').classList.remove('show');
+  const r=DEMO[Math.floor(Math.random()*DEMO.length)];
+  setTimeout(()=>{
+    document.getElementById('ld').classList.remove('show');
+    document.getElementById('rs').classList.add('show');
+    document.getElementById('rart').src=r.cover;
+    document.getElementById('rttl').textContent=r.title;
+    document.getElementById('rart2').textContent=r.artist;
+    document.getElementById('ralb').textContent=r.album;
+    document.getElementById('rmp').textContent=r.match+' match';
+    document.getElementById('rtags').innerHTML=[r.genre,'BPM '+r.bpm,r.key].map(t=>`<span class="tag">${t}</span>`).join('');
+    document.getElementById('savebtn').textContent='♡ Save';
+    curResult=r;
+    // add to history
+    HIST.unshift({title:r.title,artist:r.artist,time:'just now',cover:r.cover});
+    if(HIST.length>5)HIST.pop();
+    renderHist();
+    STATS[0].v=String(parseInt(STATS[0].v)+1);
+    renderStats();
+  },2800);
+}
+function resetUp(){
+  document.getElementById('uz').style.display='';
+  document.getElementById('ld').classList.remove('show');
+  document.getElementById('rs').classList.remove('show');
+  document.getElementById('urli').value='';
+  document.getElementById('fi').value='';
+}
+function toggleSave(){
+  const b=document.getElementById('savebtn');
+  const saved=b.textContent.includes('Saved');
+  b.textContent=saved?'♡ Save':'♥ Saved!';
+  if(!saved){STATS[1].v=String(parseInt(STATS[1].v)+1);renderStats();}
+}
+function openSpotify(){
+  if(curResult&&curResult.spotify)window.open(curResult.spotify,'_blank');
+  else window.open('https://open.spotify.com','_blank');
+}
+function playResult(){
+  if(!curResult)return;
+  document.getElementById('npa').src=curResult.cover||'';
+  document.getElementById('npt').textContent=curResult.title||'';
+  document.getElementById('npar').textContent=curResult.artist||'';
+  document.getElementById('np').classList.add('vis');
+}
+
+function renderHist(){
+  const el=document.getElementById('hl');el.innerHTML='';
+  HIST.forEach(h=>{
+    el.innerHTML+=`<div class="hi">
+      <img class="hia" src="${h.cover}" alt="${h.title}"/>
+      <div class="hin"><div class="hit">${h.title}</div><div class="hiar">${h.artist}</div></div>
+      <span class="htm">${h.time}</span>
+      <button class="hop" onclick="window.open('https://open.spotify.com','_blank')">→</button>
+    </div>`;
+  });
+}
+function renderStats(){
+  document.getElementById('sl2').innerHTML=STATS.map(s=>`<div class="sr"><div class="sic">${s.i}</div><div><div class="sn">${s.v}</div><div class="slb">${s.l}</div></div></div>`).join('');
+}
+function renderFeat(){
+  document.getElementById('fg').innerHTML=FEAT.map((f,i)=>`<div class="fc" style="animation-delay:${i*0.05}s"><div class="fi">${f.i}</div><div class="ftt">${f.t}</div><div class="fd">${f.d}</div></div>`).join('');
+}
+
+// nav
+function scrollSec(id){document.getElementById(id).scrollIntoView({behavior:'smooth'});}
+function toggleMob(){document.getElementById('mn').classList.toggle('show');}
+
+// active nav on scroll
+window.addEventListener('scroll',()=>{
+  ['discover','trending','history','features'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const top=el.offsetTop-100;
+    document.querySelectorAll('.nav-mid a').forEach(a=>{
+      if(a.textContent.toLowerCase()===id||a.textContent.toLowerCase()==='history'&&id==='history'){
+        a.classList.toggle('on',window.scrollY>=top&&window.scrollY<top+el.offsetHeight);
+      }
+    });
+  });
+});
+</script>
+</body>
+</html>

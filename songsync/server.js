@@ -1,0 +1,14 @@
+
+const express=require('express');
+const cors=require('cors');
+require('dotenv').config();
+
+const app=express();
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/song',require('./routes/songRoutes'));
+
+app.get('/',(req,res)=>res.json({message:'SongSync API Running'}));
+
+app.listen(process.env.PORT||5000);
